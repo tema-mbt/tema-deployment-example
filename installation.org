@@ -1,0 +1,111 @@
+# -*- mode: org ; coding: utf-8 -*-
+
+* TEMA installation for private use
+
+** Prerequisites for installation and demo
+
+   - Linux/Unix environment (for windows, see ???)
+   - python 2.X (X>=6), python-tk
+   - java runtime
+   - bash
+   - directory ${HOME}/bin exists and is in the path
+   - Local tema-deployment-example repository is in a directory, which can
+     have sibling directories.
+
+** Downloading and installing TEMA software and libraries
+
+In the following, installation script private_installation.sh is presented.
+It is found at the root level of the tema-deployment-example repository and
+should be run with command "./private_installation.sh" or "/bin/bash
+./private_installation.sh". It downloads and installs TEMA test generator,
+python library for adaptor development and ModelDesigner, a graphical tool
+for modelling and model package management.
+
+After running the script, your should be in the root directory of the local
+tema-deployment-example repository, there are sibling directories
+  - ../tema-tg
+  - ../tema-adapterlib
+  - ../ModelDesigner
+and symbolic links
+  - ${HOME}/bin/tema
+  - ${HOME}/bin/tema.modeldesigner
+
+#+begin_src sh :tangle ./private_installation.sh :noweb yes :shebang "#!/bin/bash"
+set -e
+pushd $HOME
+if ! [ -d ./bin ] ; then
+    mkdir -p ./bin
+    export PATH=${HOME}/bin:$PATH
+fi
+popd
+cd ..
+<<install_tema_test_generator>>
+
+<<install_tema_adapterlib>>
+
+<<install_model_designer>>
+#+end_src
+
+*** Test generation engine: tema-tg
+
+Part of TEMA which are going to be maintained in future, are in GitHub
+repositories of the user tema-tut: https://github.com/tema-tut
+
+#+name: install_tema_test_generator
+#+begin_src sh
+if ! [ -e ${HOME}/bin/tema ] ; then
+    git clone https://github.com/tema-tut/tema-tg.git
+    pushd tema-tg
+    git checkout devel
+    ln -s "`pwd -P`/TemaLib/tema/tematool.py" "${HOME}/bin/tema"
+    popd
+fi
+#+end_src
+
+*** A base library for adaptors in python: tema-adapterlib
+
+#+name: install_tema_adapterlib
+#+begin_src sh
+if ! [ -e ./tema-adapterlib ] ; then 
+    git clone https://github.com/tema-tut/tema-adapterlib.git
+fi
+#+end_src
+
+*** ModelDesigner
+
+There is currently no plans to develop ModelDesigner further. Unfortunately,
+currently ModelDesigner is only graphical tool for modelling and model
+package management in TEMA. Show it is installed from binary package
+available form TEMA site: http://tema.cs.tut.fi.
+
+The drawback of installation of this kind is, that ModelDesigner can be run
+only in directory in which it is installed. Following installation procedure
+provides wrapper script tema.modeldesigner for taking care of this.
+
+#+name: install_model_designer
+#+begin_src sh
+if ! [ -e ${HOME}/bin/tema.modeldesigner ] ; then
+    if [ "x86_64" == `uname -p` ] ; then
+	wget http://tema.cs.tut.fi/downloads/ModelDesigner-linux.gtk.x86_64.zip
+	unzip ./ModelDesigner-linux.gtk.x86_64.zip
+	echo "Done extracting"
+    else
+	wget http://tema.cs.tut.fi/downloads/ModelDesigner-linux.gtk.x86.zip
+	unzip ./ModelDesigner-linux.gtk.x86.zip
+	echo "Done extracting"
+    fi
+    cat > ./ModelDesigner/tema.modeldesigner <<EOF
+#!/bin/bash
+set -e
+
+umask 007
+CMD=\$(python -c "import os ; print os.path.realpath(\"\$0\")" )
+WDIR=\$(dirname "\$CMD")
+cd "\$WDIR"
+exec ./ModelDesigner
+EOF
+ln -s "`pwd -P`/ModelDesigner/tema.modeldesigner" "${HOME}/bin/"
+chmod u+x ./ModelDesigner/tema.modeldesigner
+fi
+#+end_src
+

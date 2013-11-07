@@ -1,0 +1,131 @@
+# -*- mode: org ; coding: utf-8 -*-
+#+TITLE:     Tema deployment example
+#+AUTHOR:    Heikki Virtanen
+#+DATE:
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE:  en
+#+OPTIONS:   H:3 num:t toc:nil \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:
+#+LINK_HOME:
+#+XSLT:
+
+* Quick installation and running a demo
+
+** Installation
+
+#+begin_src sh
+mkdir TemaEnv && cd TemaEnv
+git clone https://gitrepo.cs.tut.fi/tema-deployment-example.git
+cd tema-deployment-example
+./private_installation.sh
+#+end_src
+
+** Running demo
+
+The system may wait for around half a minute after the following text appears:
+Adapter: Waiting for a connection from a client.
+
+This ensures that the test model has time for proper initialisation.
+
+#+begin_src sh
+cd TestEnv
+./tema-exec-test.sh ../ExampleModelPackage.zip  ../canvas-adapter.py  Ruut
+#+end_src
+
+** Examine example model
+
+1. Start ModelDesigner with command "tema.modeldesigner"
+2. Import ExampleModelPackage.zip into Modeldesigner (File->Import domain)
+
+** Examine example adaptor
+
+The example adaptor is implemented in files
+  - canvas-adapter.py :: contains main program and specialised Target and
+       TestRunner classes. See documentation of tema-adapterlib.
+  - kw_generic.py :: contains implementation for commonly used keywords
+       which are not dependent from target.
+  - kw_tkinter.py :: contains implementations of target specific keywords
+       which require special libraries (here tkinter).
+
+* Test model terminology
+
+  - Action word :: Logical operation to be performed. As a transition label,
+       it start with prefix "aw_"
+  - State verification :: Special action word which is supposed to success
+       and which do not change state of the test target. (Prefix: "sv_")
+  - Keyword :: Concrete operation actually performed in a test target or its
+       environment. Any action word is mapped in a model into a simple state
+       machine which uses keywords as transition labels. (Prefix: "kw_")
+
+* Implementing and testing an adapter
+
+The base library for adapters implemented in python is tema-adapterlib. It
+defines classes Target, TestRunner, and Keyword. Files canvas_adapter.py and
+kw_*.py provide a simple example implementation of functional adapter.
+
+The adapter can be run in three different modes.
+1. Interactive mode (command line option -i) listens keywords from standard
+   input. The keywords should be given without prefix.
+2. Batch mode (command line option -f <file>) reads keywords from given
+   file.
+3. Socket mode (command line option -a <host> -p <port>) has interactive
+   conversation with a test generation engine. The test generation engine
+   have to be started before adapter.
+
+A test target name is a mandatory argument, it refers to a device defined
+within the model library. Actual test targets names are defined when
+connections to the systems under test are initialised.
+
+A short help can be obtained with option -h.
+
+** TestRunner
+
+A TestRunner object is an multiplexer which directs arriving keywords to a test
+target which is currently active. It has an internal keyword "settarget"
+which change the active target.
+
+The actual test runner is supposed to be derived from class
+TestRunner. Methods _setupTestAutomation() and _cleanupTestAutomation have
+to be implemented. The method _setupTestAutomation is supposed to initialise
+connections to a test targets and append corresponding target objects into
+list _targets (attribute of test runner object). An attribute _targetNames
+is a list of names defined at command line of adapter. The method
+_cleanupTestAutomation is called when test execution is about to end.
+
+** Target
+
+A Target objects are open connections to systems under test. They are
+recognised with a name attribute which is defined at initialisation.
+
+** Keywords
+
+There is one class for each keyword used in a models. The keyword classes
+shall be subclasses of class Keyword. Each keyword class shall define a
+regular expression pattern which parses parameters of the keyword, in its
+__init__method. Also, a method execute have to be implemented. It actually
+executes the keyword at SUT and returns True or False whether execution was
+successful or not.
+
+** Adapter main
+
+An adapter is started by parsing command line arguments, creating test
+runner object and entering into adapter main. See the end of the file
+canvas_adapter.py.
+
+* Debugging and simulating the model
+
+In the directory TestEnv, there is the script "tema-exec-test.sh". Go to that directory and execute command
+#+begin_src sh
+./tema-exec-test.sh ../../ExampleModelPackage.zip
+#+end_src
+There is no need to define the adapter and target name, since the generated
+test will be executed against the model itself.
+
+The command starts a simulated test run, where user clicks the actions words
+to execute. Whenever test generator suggests a key word for execution, user
+is asked whether the key word is succeeding or not.
