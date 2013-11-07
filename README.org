@@ -20,7 +20,7 @@
 
 #+begin_src sh
 mkdir TemaEnv && cd TemaEnv
-git clone https://gitrepo.cs.tut.fi/tema-deployment-example.git
+git clone https://github.com/hessuvi/tema-deployment-example.git
 cd tema-deployment-example
 ./private_installation.sh
 #+end_src
@@ -77,11 +77,14 @@ The adapter can be run in three different modes.
    conversation with a test generation engine. The test generation engine
    have to be started before adapter.
 
-A test target name is a mandatory argument, it refers to a device defined
-within the model library. Actual test targets names are defined when
-connections to the systems under test are initialised.
+A test target name is a mandatory argument, but it need not have any
+meaning. Actual test targets names are defined when connections to the
+systems under test are initialised.
 
 A short help can be obtained with option -h.
+
+(Note: During an actual test run, the target name should refer to a device
+defined within the model library.)
 
 ** TestRunner
 
